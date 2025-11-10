@@ -5,91 +5,140 @@ const contenedorSelectExperiencia = document.querySelector('[name="experiencia"]
 const contenedorNumResultados = document.querySelector('.numResultados');
 const contenedorPaginacion = document.querySelector('.paginacion');
 
+let jobsData = [];
+let pageSize = 3;
+let currentPage = 1;
 
-const arrayUbicaciones = [];
-const arrayTecnologias = [];
-const arrayExperiencias = [];
-const arrayResultados = [];
-
-
-
-
-fetch("./data.json")
-    .then((response) => {
-        return response.json();
-    })
-    .then((jobs) => {
-        const total = jobs.length;
-        jobs.forEach(job => {
-            const article = document.createElement('article');
-            // Creación de articulos
-            article.className = "job";
-            article.dataset.ubicacion = job.data.modalidad;
-            article.dataset.tecnologia = job.data.technology;
-            article.dataset.experiencia = job.data.nivel;
+// const arrayUbicaciones = [];
+// const arrayTecnologias = [];
+// const arrayExperiencias = [];
+// const arrayResultados = [];
+// let arrayFiltrado = [];
 
 
+async function cargarjobs() {
+    const response = await fetch("./data.json");
+    return await response.json();
+}
 
-            article.innerHTML =
-                `<div>
-                <h3 class="title">${job.titulo}</h3>
-                <small>${job.empresa} | ${job.ubicacion}</small>
-                <p>${job.descripcion}</p>
-            </div>
-            <button class="button-apply-job">Aplicar</button>`;
+function crearArticle(job) {
+    const article = document.createElement('article');
 
-            contenedor.appendChild(article);
-            // arrayResultados.push(article);
-            // console.log('arrayResultados :>> ', arrayResultados);
-            // arrayResultados.filter()
-            // Creación de options para el select Ubicación
-            if (!arrayUbicaciones.includes(job.ubicacion)) {
-                arrayUbicaciones.push(job.ubicacion);
-                const optionUbicacion = document.createElement('option');
-                optionUbicacion.value = job.data.modalidad;
-                optionUbicacion.innerHTML = job.ubicacion;
-                contenedorSelectUbicacion.appendChild(optionUbicacion);
-            }
-            // Creación de options para el select Tecnología
-            //Añadimos primero todas las tecnologías al array si no están ya
-            if (Array.isArray(job.data.technology)) { //comprobamos si es un array
-                job.data.technology.forEach(tech => {
-                    if (!arrayTecnologias.includes(tech)) {
-                        arrayTecnologias.push(tech);
-                    }
-                })
-            } else if (!arrayTecnologias.includes(job.data.technology)) {
-                arrayTecnologias.push(job.data.technology);
-            }
-            // Creación de options para el select experiencia
-            if (!arrayExperiencias.includes(job.data.nivel)) {
-                arrayExperiencias.push(job.data.nivel);
-                const optionExperiencia = document.createElement('option');
-                optionExperiencia.value = job.data.nivel;
-                optionExperiencia.innerHTML = (job.data.nivel).charAt(0).toUpperCase() + (job.data.nivel).slice(1);
-                contenedorSelectExperiencia.appendChild(optionExperiencia);
-            }
+    article.className = "job";
+    article.dataset.ubicacion = job.data.modalidad;
+    article.dataset.tecnologia = job.data.technology;
+    article.dataset.experiencia = job.data.nivel;
 
+    article.innerHTML =
+       `<div>
+           <h3 class="title">${job.titulo}</h3>
+           <small>${job.empresa} | ${job.ubicacion}</small>
+           <p>${job.descripcion}</p>
+        </div>
+        <button class="button-apply-job">Aplicar</button>`;
+    return article;
+
+}
+
+function renderPagina(listaJobs, page=1) {
+    
+
+    contenedor.innerHTML='';
+    const total = listaJobs.length;
+    const start=(page-1)*pageSize;
+    const end=start+pageSize;
+    const pagina = listaJobs.slice(start,end);
+
+    //Pintar articulos
+    const articles = pagina.map(crearArticle);
+    contenedor.append(...articles);
+
+    //Contador
+    const mostrados = Math.min(pageSize, total-start > 0 ? total-start : 0);
+    contenedorNumResultados.innerHtml = `Mostrando <span id="mostrados">${mostrados}</span> de <span id="total">${total}</span> resultados.`;
+
+    //Paginacion
+    const numPaginas = Math.ceil(total/pageSize);
+    let salida = '';
+    for (let i=1; i<=numPaginas; i++){
+        salida += `<a href="#" class="pag ${i==page ? 'is-active' : ''}" data-page="${i}">${i}</a>`;
+    }
+    contenedorPaginacion.innerHTML = salida;
+
+    //Listeners de paginacion
+    const paginas = contenedorPaginacion.querySelectorAll('.pag');
+    paginas.forEach(a=> {
+        a.addEventListener('click', event => {
+            event.preventDefault();
+            currentPage=Number(a.dataset.page);
+            renderPagina(listaJobs,currentPage);
         });
-        //Creamos los options para todas las tecnologías incluidas en el array
-        arrayTecnologias.forEach(tech => {
-            const optionTecnologias = document.createElement('option');
-            optionTecnologias.value = tech;
-            optionTecnologias.innerHTML = tech.charAt(0).toUpperCase() + tech.slice(1);;
-            contenedorSelectTecnologia.appendChild(optionTecnologias);
-        });
+    });
+}
 
-        contenedorNumResultados.innerHTML = `Se han encontrado <span id="total">${total}</span> resultados`
-        let contador=1;
-        let salida="";
-        for (let i=1; i<=total; i+=3){
-            salida += `<a href="">${contador++}</a>`
+function rellenarSelect(jobs) {
+
+    //Evitamos duplicaciones en los options con set 
+    const ubicaciones = new Map(); //usamos un map para guardar un par
+    const tecnologias = new Set();
+    const experiencias = new Set();
+
+    jobs.forEach(job => {
+        //Ubicacion
+        if (!ubicaciones.has(job.data.modalidad)) {
+            ubicaciones.set(job.data.modalidad, job.ubicacion);
         }
-        contenedorPaginacion.innerHTML = salida;
+        
+        //Tecnología
+        if (Array.isArray(job.data.technology)) {
+            job.data.technology.forEach(t=> tecnologias.add(t));
+        } else if (job.data.technology) {
+            tecnologias.add(job.data.technology);
+        }
 
+        //Experiencia
+        if (job.data.nivel) experiencias.add(job.data.nivel);
 
     })
 
+        //Ubicacion
+        ubicaciones.forEach((texto,valor)=>{
+            const opt = document.createElement('option');
+            opt.value = valor;
+            opt.textContent = texto;
+            contenedorSelectUbicacion.appendChild(opt);
+        });
+
+        //Tecnología
+        tecnologias.forEach(t=>{
+            const opt = document.createElement('option');
+            opt.value=t;
+            opt.textContent=t.charAt(0).toUpperCase() + t.slice(1);
+            contenedorSelectTecnologia.appendChild(opt);
+        });
+
+        //Experiencias
+        experiencias.forEach(exp=>{
+            const opt = document.createElement('option');
+            opt.value=exp;
+            opt.textContent=exp.charAt(0).toUpperCase() + exp.slice(1);
+            contenedorSelectExperiencia.appendChild(opt);
+        });
+}
+
+async function init(){
+    jobsData = await cargarjobs();
+    window.jobsData = jobsData;
+
+    //Rellenamos los select
+    rellenarSelect(jobsData);
+    window.currentPage = currentPage;
+    
+    currentPage= 1;
+    renderPagina(window.jobsData,currentPage);
+}
+
+init();
 
 {/* <a href="">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none"
