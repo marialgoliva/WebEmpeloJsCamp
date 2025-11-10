@@ -6,13 +6,14 @@ resultadosBusquedaSection?.addEventListener('click', function (event) {
         window.location.href = "../resultado.html"
     }
 })
-
+const jobArticles = document.querySelectorAll('.job');
 const filtersDiv = document.querySelector('.filters');
 
 filtersDiv?.addEventListener('change', function (event) {
     let selectName = event.target.name;
     let selectOption = event.target.value;
     const jobArticles = document.querySelectorAll('.job');
+    let numResultados = 0;
 
     switch(selectName){
         case 'tecnologia':
@@ -22,6 +23,7 @@ filtersDiv?.addEventListener('change', function (event) {
                     article.classList.add('invisible');
                 } else {
                     article.classList.remove('invisible');
+                    numResultados++;
                 }
             });
             break;
@@ -32,6 +34,7 @@ filtersDiv?.addEventListener('change', function (event) {
                     article.classList.add('invisible');
                 } else {
                     article.classList.remove('invisible');
+                    numResultados++;
                 }
             });
             break;
@@ -42,16 +45,19 @@ filtersDiv?.addEventListener('change', function (event) {
                     article.classList.add('invisible');
                 } else {
                     article.classList.remove('invisible');
+                    numResultados++;
                 }
             });
             break;
         case 'experiencia':
             jobArticles.forEach(article => {
                 const datasetName = article.dataset.experiencia;
+                console.log('datasetName :>> ', datasetName);
                 if (datasetName!==selectOption && selectOption!=="") {
                     article.classList.add('invisible');
                 } else {
                     article.classList.remove('invisible');
+                    numResultados++;
                 }
             });
             break;
@@ -60,4 +66,8 @@ filtersDiv?.addEventListener('change', function (event) {
 
             
     }
+    document.querySelector('#total').textContent = numResultados;
+
+
 })
+
