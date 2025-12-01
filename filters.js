@@ -6,8 +6,12 @@ resultadosBusquedaSection?.addEventListener('click', function (event) {
         window.location.href = "../resultado.html"
     }
 })
+
 const jobArticles = document.querySelectorAll('.job');
 const filtersDiv = document.querySelector('.filters');
+
+console.log('jobArticles :>> ', jobArticles);
+console.log('window.jobsData :>> ', window.jobsData);
 
 filtersDiv?.addEventListener('change', function (event) {
     let selectName = event.target.name;
